@@ -19,7 +19,7 @@ from curvematch import geodesics
 
 
 class CCThickness():
-    def __init__(self, subject_name, curvefile_path_top, curvefile_path_bottom, resample_siz=100, geodesic_steps=10):
+    def __init__(self, subject_name, curvefile_path_top, curvefile_path_bottom, resample_siz=500, geodesic_steps=10):
         self.settings = geodesics.Geodesic()
         self.settings.steps = geodesic_steps
         self.settings.closed = False
@@ -74,8 +74,9 @@ class CCThickness():
         if include_naive:
             self.naive_thickness = np.sqrt(np.sum((self.curve_top.coords - self.curve_bot.coords)**2, axis=0))
         self.thickness = np.sqrt(np.sum((self.curve_top.coords - self.curve_bot_gamma_adjusted.coords)**2, axis=0))
-        print "Naive: ", np.average(self.naive_thickness), '\n'
-        print "Gamma: ", np.average(self.thickness), '\n'
+        print "Naive: ", np.average(self.naive_thickness),'\n'
+        print "Gamma: ", np.average(self.thickness),'\n'
+        print "% Difference: ", 100 * abs(np.average(self.naive_thickness-self.thickness))/(.5*(np.average(np.average(self.naive_thickness)*np.average(self.thickness)))),'\n\n'
 
     def save_thickness(self, output_file_path):
         output_file_path = os.path.abspath(output_file_path)
@@ -114,12 +115,17 @@ def analyze_thicknesses(ucf_curve_paths):
     if len(ucf_curve_paths) % 2 != 0:
         raise ValueError("Uneven Number of Segmentations! Can not process")
     subjects = []
-    for pair_index in xrange(1, len(ucf_curve_paths), 2):
-        current_subject = CCThickness(pair_index/2+1, ucf_curve_paths[pair_index],ucf_curve_paths[pair_index+1])
+    for pair_index in xrange(0, len(ucf_curve_paths), 2):
+        print '\n\n', ucf_curve_paths[pair_index][36:45], ucf_curve_paths[pair_index], ucf_curve_paths[pair_index+1]
+        current_subject = CCThickness(ucf_curve_paths[pair_index][36:45], ucf_curve_paths[pair_index], ucf_curve_paths[pair_index+1])
+        current_subject.save_thickness("./resutls/"+current_subject.subject_name+'.txt.gz')
         subjects.append(current_subject)
     plot_thicknesses(subjects)
 
-a = CCThickness("Subject 1", "002_S_0295_TOP.ucf", "002_S_0295_BOT.ucf")
-b = CCThickness("Subject 2", "002_S_0413_TOP.ucf", "002_S_0413_BOT.ucf")
-a.save_thickness("test.txt.gz")
+
+#a = CCThickness("Subject 1", "002_S_0295_TOP.ucf", "002_S_0295_BOT.ucf")#
+#b = CCThickness("Subject 2", "002_S_0413_TOP.ucf", "002_S_0413_BOT.ucf")
+#a.save_thickness("test.txt.gz")
 #plot_thicknesses([a,b])
+a = list(np.loadtxt("ucfFileNames.txt",'string'))
+analyze_thicknesses(a)

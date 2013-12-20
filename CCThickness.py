@@ -73,9 +73,13 @@ class CCThickness():
         #Just finds the euclidean distance between points
         if include_naive:
             self.naive_thickness = np.sqrt(np.sum((self.curve_top.coords - self.curve_bot.coords)**2, axis=0))
-        self.thickness.append(np.sqrt(np.sum((self.curve_top.coords - self.curve_bot_gamma_adjusted.coords)**2, axis=0)))
+        self.thickness = np.sqrt(np.sum((self.curve_top.coords - self.curve_bot_gamma_adjusted.coords)**2, axis=0))
         print "Naive: ", np.average(self.naive_thickness), '\n'
         print "Gamma: ", np.average(self.thickness), '\n'
+
+    def save_thickness(self, output_file_path):
+        output_file_path = os.path.abspath(output_file_path)
+        np.savetxt(output_file_path, self.thickness)
 
 
 def add_thickness_plot_given_curves(curve1, curve2):
@@ -115,8 +119,7 @@ def analyze_thicknesses(ucf_curve_paths):
         subjects.append(current_subject)
     plot_thicknesses(subjects)
 
-
 a = CCThickness("Subject 1", "002_S_0295_TOP.ucf", "002_S_0295_BOT.ucf")
-b=  CCThickness("Subject 2", "002_S_0413_TOP.ucf", "002_S_0413_BOT.ucf")
-
-plot_thicknesses([a,b])
+b = CCThickness("Subject 2", "002_S_0413_TOP.ucf", "002_S_0413_BOT.ucf")
+a.save_thickness("test.txt.gz")
+#plot_thicknesses([a,b])

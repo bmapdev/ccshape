@@ -9,10 +9,9 @@ __email__ = "ayersb@ucla.edu"
 from math import pi
 import os
 import sys
-import pickle
+import cPickle
 import matplotlib.pyplot as plt
 import numpy as np
-import numpy.linalg as LA
 from curvematch.match import match_curve_pair
 from curvematch.curve import Curve
 from curvematch.qshape import QShape
@@ -124,7 +123,7 @@ def main():
         subject_thickness.plot_thicknesses()
         subject_thickness.save_thickness()
         output_file = open(subject_thickness.subject_name + "_CCThickness_object.pickle", 'w')
-        pickle.dump(subject_thickness, output_file)
+        cPickle.dump(subject_thickness, output_file)
         output_file.close()
 
 main()

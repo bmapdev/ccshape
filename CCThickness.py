@@ -8,6 +8,8 @@ __email__ = "ayersb@ucla.edu"
 
 from math import pi
 import os
+import sys
+import pickle
 import matplotlib.pyplot as plt
 import numpy as np
 import numpy.linalg as LA
@@ -76,56 +78,53 @@ class CCThickness():
         self.thickness = np.sqrt(np.sum((self.curve_top.coords - self.curve_bot_gamma_adjusted.coords)**2, axis=0))
         print "Naive: ", np.average(self.naive_thickness),'\n'
         print "Gamma: ", np.average(self.thickness),'\n'
-        print "% Difference: ", 100 * abs(np.average(self.naive_thickness-self.thickness))/(.5*(np.average(np.average(self.naive_thickness)*np.average(self.thickness)))),'\n\n'
+        print "% Difference: ", 100 * (np.average(self.naive_thickness-self.thickness))/(.5*(np.average(np.average(self.naive_thickness)+np.average(self.thickness)))),'\n\n'
 
-    def save_thickness(self, output_file_path):
-        output_file_path = os.path.abspath(output_file_path)
-        np.savetxt(output_file_path, self.thickness)
+    def save_thickness(self):
+        np.savetxt(self.subject_name+"_thickness_values.txt", self.thickness)
 
-
-def add_thickness_plot_given_curves(curve1, curve2):
-        plt.plot(curve1.coords[0], curve1.coords[1])
-        plt.plot(curve2.coords[0], curve2.coords[1])
-        for i in xrange(0,len(curve1.coords[0])):
-            plt.plot([curve1.coords[0][i], curve2.coords[0][i]],
-                     [curve1.coords[1][i], curve2.coords[1][i]])
-
-
-def plot_thicknesses(CCThickness_object_list, individual_plots=False, include_naive_plot=True):
-    figure_count = 1
-    for subject in CCThickness_object_list:
-        plt.figure(figure_count)
-        if include_naive_plot == True:
-            plt.title(subject.subject_name)
+    def plot_thicknesses(self, include_naive_plot=True):
+        set_fontsize = 10
+        if include_naive_plot:
+            test_code_only = "\n% Difference: " + str(100 * (np.average(self.naive_thickness-self.thickness))/(.5*(np.average(np.average(self.naive_thickness)+np.average(self.thickness)))))
             plt.subplot(211)
-            plt.subplots_adjust(hspace = 0.4)
-            plt.title(subject.subject_name)
-            plt.xlabel("Naive Plot")
-            add_thickness_plot_given_curves(subject.curve_top, subject.curve_bot)
+            plt.title(self.subject_name+test_code_only, fontsize=set_fontsize+1)
+            plt.subplots_adjust(hspace=0.4)
+            plt.tick_params(labelsize=set_fontsize)
+            plt.xlabel("Point to Point Matching" + '\n Avg Thickness = ' + str(np.average(self.naive_thickness)),fontsize=set_fontsize)
+            self.add_thickness_plot_given_curves(self.curve_top, self.curve_bot)
             plt.subplot(212)
-            plt.xlabel("Intelligent Plot")
-            add_thickness_plot_given_curves(subject.curve_top, subject.curve_bot_gamma_adjusted)
+            plt.xlabel("Elastic Matching " + '\n Avg Thickness = ' + str(np.average(self.thickness)), fontsize=set_fontsize)
+            self.add_thickness_plot_given_curves(self.curve_top, self.curve_bot_gamma_adjusted)
+            plt.savefig(self.subject_name + ".pdf")
         else:
-            plt.title(subject.subject_name)
-            add_thickness_plot_given_curves(subject.curve_top, subject.curve_bot_gamma_adjusted)
-        plt.savefig("test"+str(figure_count)+".pdf")
-        figure_count += 1
+            plt.title(self.subject_name)
+            self.add_thickness_plot_given_curves(self.curve_top, self.curve_bot_gamma_adjusted)
+            plt.savefig(self.subject_name + ".pdf")
 
-def analyze_thicknesses(ucf_curve_paths):
-    if len(ucf_curve_paths) % 2 != 0:
-        raise ValueError("Uneven Number of Segmentations! Can not process")
-    subjects = []
-    for pair_index in xrange(0, len(ucf_curve_paths), 2):
-        print '\n\n', ucf_curve_paths[pair_index][36:45], ucf_curve_paths[pair_index], ucf_curve_paths[pair_index+1]
-        current_subject = CCThickness(ucf_curve_paths[pair_index][36:45], ucf_curve_paths[pair_index], ucf_curve_paths[pair_index+1])
-        current_subject.save_thickness("./resutls/"+current_subject.subject_name+'.txt.gz')
-        subjects.append(current_subject)
-    plot_thicknesses(subjects)
+    def add_thickness_plot_given_curves(self, curve1, curve2):
+            plt.plot(curve1.coords[0], curve1.coords[1])
+            plt.plot(curve2.coords[0], curve2.coords[1])
+            for i in xrange(0,len(curve1.coords[0])):
+                plt.plot([curve1.coords[0][i], curve2.coords[0][i]],
+                         [curve1.coords[1][i], curve2.coords[1][i]])
 
 
-#a = CCThickness("Subject 1", "002_S_0295_TOP.ucf", "002_S_0295_BOT.ucf")#
-#b = CCThickness("Subject 2", "002_S_0413_TOP.ucf", "002_S_0413_BOT.ucf")
-#a.save_thickness("test.txt.gz")
-#plot_thicknesses([a,b])
-a = list(np.loadtxt("ucfFileNames.txt",'string'))
-analyze_thicknesses(a)
+def main():
+    if len(sys.argv) <= 1:
+        return help()
+    else:
+        subject_name = sys.argv[1]
+        subject_top_curve_ucf = sys.argv[2]
+        subject_bot_curve_ucf = sys.argv[3]
+        subject_curve_out_dir = sys.argv[4]
+        subject_thickness = CCThickness(subject_name, subject_top_curve_ucf,
+                                        subject_bot_curve_ucf)
+        os.chdir(subject_curve_out_dir)
+        subject_thickness.plot_thicknesses()
+        subject_thickness.save_thickness()
+        output_file = open(subject_thickness.subject_name + "_CCThickness_object.pickle", 'w')
+        pickle.dump(subject_thickness, output_file)
+        output_file.close()
+
+main()

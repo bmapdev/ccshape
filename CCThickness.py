@@ -14,8 +14,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 from curvematch.match import match_curve_pair
 from curvematch.curve import Curve
+from curvematch.curve import Curve
 from curvematch.qshape import QShape
 from curvematch import geodesics
+from shapeio.curveio import WriteUCF
 
 
 
@@ -108,6 +110,19 @@ class CCThickness():
                 plt.plot([curve1.coords[0][i], curve2.coords[0][i]],
                          [curve1.coords[1][i], curve2.coords[1][i]])
 
+    def output_thickness_ucf(self):
+        fname = self.subject_name+"_thickness.ucf"
+        output_coords = [np.zeros(2*len(self.curve_top.coords[0]))]
+        for coord_index in xrange(len(self.curve_top.coords)):
+            output_coords.append(np.array(list(self.curve_top.coords[coord_index]) + list(self.curve_bot.coords[coord_index][::-1])))
+        output_coords = np.array(output_coords).transpose()
+        output_thickness = np.array(list(self.thickness) + list(self.thickness)[::-1])
+        #output_thickness = np.array([output_thickness, output_thickness])
+        print "Coords" , output_coords.shape
+        print "Thickness", output_thickness.shape
+
+        WriteUCF(output_coords, "thickness", output_thickness, fname)
+
 
 def main():
     if len(sys.argv) <= 1:
@@ -122,6 +137,7 @@ def main():
         os.chdir(subject_curve_out_dir)
         subject_thickness.plot_thicknesses()
         subject_thickness.save_thickness()
+        subject_thickness.output_thickness_ucf()
         output_file = open(subject_thickness.subject_name + "_CCThickness_object.pickle", 'w')
         cPickle.dump(subject_thickness, output_file)
         output_file.close()

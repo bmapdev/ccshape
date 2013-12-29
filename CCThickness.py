@@ -34,9 +34,12 @@ class CCThickness():
 
         self.curvefile_path_top = os.path.abspath(curvefile_path_top)
         self.curvefile_path_bottom = os.path.abspath(curvefile_path_bottom)
+
         self.gamma = []
         self.curve_top = []
         self.curve_bot = []
+        self.plane_dim_data = []
+
         self.curve_bot_gamma_adjusted = []
         self.naive_thickness = []
         self.thickness = []
@@ -51,15 +54,25 @@ class CCThickness():
         curve_pair_data = match_curve_pair(self.curvefile_path_top, self.curvefile_path_bottom,
                                            self.settings, self.rotation,
                                            self.resample_siz, self.return_shapes)
+        self.gamma = curve_pair_data[0].gamma
         self.curve_top = curve_pair_data[1]
         self.curve_bot = curve_pair_data[2]
-        self.gamma = curve_pair_data[0].gamma
-
-        # WARNING! This assumes slice coordinate is in first pos of input array
-        self.curve_top.coords = self.curve_top.coords[1:2+1]
+        diff_between_dims = np.abs(np.sum(self.curve_top.coords - self.curve_bot.coords, 1))
+        if np.min(diff_between_dims) > 1:
+            raise ValueError("These segmentations don't seem to be from the same plane.")
+        least_var_dim = np.argmin(diff_between_dims)
+        coords_top, coords_bot = [], []
+        for i in xrange(self.curve_top.dim):
+            if i == least_var_dim:
+                self.plane_dim_data = [i, self.curve_top.coords[i], self.curve_bot.coords[i]]
+            else:
+                coords_top.append(self.curve_top.coords[i])
+                coords_bot.append(self.curve_bot.coords[i])
         self.curve_top.dim -= 1
-        self.curve_bot.coords = self.curve_bot.coords[1:2+1]
         self.curve_bot.dim -= 1
+        self.curve_top.coords = np.array(coords_top)
+        self.curve_bot.coords = np.array(coords_bot)
+
 
     def get_curve_of_gamma(self, curve1):
         ##Please check that this is correct!
@@ -110,17 +123,22 @@ class CCThickness():
                 plt.plot([curve1.coords[0][i], curve2.coords[0][i]],
                          [curve1.coords[1][i], curve2.coords[1][i]])
 
-    def output_thickness_ucf(self):
-        fname = self.subject_name+"_thickness.ucf"
-        output_coords = [np.zeros(2*len(self.curve_top.coords[0]))]
+    def output_thickness_ucf(self, output_adjusted_coords = True):
+        output_coords = []
+        output_plane_data = np.array(list(self.plane_dim_data[1]) + list(self.plane_dim_data[2]))
+        output_plane_dim = self.plane_dim_data[0]
         for coord_index in xrange(len(self.curve_top.coords)):
-            output_coords.append(np.array(list(self.curve_top.coords[coord_index]) + list(self.curve_bot.coords[coord_index][::-1])))
+            if output_adjusted_coords:
+                fname = self.subject_name + "_adjusted_thickness.ucf"
+                output_coords.append(np.array(list(self.curve_top.coords[coord_index]) +
+                                              list(self.curve_bot_gamma_adjusted.coords[coord_index][::-1])))
+            else:
+                fname = self.subject_name + "_native_thickness.ucf"
+                output_coords.append(np.array(list(self.curve_top.coords[coord_index]) +
+                                              list(self.curve_bot.coords[coord_index][::-1])))
+        output_coords.insert(output_plane_dim, output_plane_data)
         output_coords = np.array(output_coords).transpose()
         output_thickness = np.array(list(self.thickness) + list(self.thickness)[::-1])
-        #output_thickness = np.array([output_thickness, output_thickness])
-        print "Coords" , output_coords.shape
-        print "Thickness", output_thickness.shape
-
         WriteUCF(output_coords, "thickness", output_thickness, fname)
 
 
@@ -137,7 +155,8 @@ def main():
         os.chdir(subject_curve_out_dir)
         subject_thickness.plot_thicknesses()
         subject_thickness.save_thickness()
-        subject_thickness.output_thickness_ucf()
+        subject_thickness.output_thickness_ucf(True)
+        subject_thickness.output_thickness_ucf(False)
         output_file = open(subject_thickness.subject_name + "_CCThickness_object.pickle", 'w')
         cPickle.dump(subject_thickness, output_file)
         output_file.close()

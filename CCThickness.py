@@ -22,7 +22,8 @@ from shapeio.curveio import WriteUCF
 
 
 class CCThickness():
-    def __init__(self, subject_name, curvefile_path_top, curvefile_path_bottom, resample_siz=500, geodesic_steps=10):
+    def __init__(self, subject_name, curvefile_path_top, curvefile_path_bottom,
+                 adjust=True, resample_siz=500, geodesic_steps=2):
         self.settings = geodesics.Geodesic()
         self.settings.steps = geodesic_steps
         self.settings.closed = False
@@ -34,20 +35,24 @@ class CCThickness():
 
         self.curvefile_path_top = os.path.abspath(curvefile_path_top)
         self.curvefile_path_bottom = os.path.abspath(curvefile_path_bottom)
+        self.adjust = adjust
 
         self.gamma = []
         self.curve_top = []
         self.curve_bot = []
+        self.medial_curve = []
         self.plane_dim_data = []
 
         self.curve_bot_gamma_adjusted = []
-        self.naive_thickness = []
-        self.thickness = []
+        self.unadjusted_thickness = []
+        self.adjusted_thickness = []
         self.main_method()
 
     def main_method(self):
         self.get_matched_curve_pair_data()
-        self.curve_bot_gamma_adjusted = self.get_curve_of_gamma(self.curve_bot)
+        if self.adjust:
+            self.curve_bot_gamma_adjusted = self.get_curve_of_gamma(self.curve_bot)
+        self.find_medial_curve()
         self.compute_thickness()
 
     def get_matched_curve_pair_data(self):
@@ -59,7 +64,7 @@ class CCThickness():
         self.curve_bot = curve_pair_data[2]
         diff_between_dims = np.abs(np.sum(self.curve_top.coords - self.curve_bot.coords, 1))
         if np.min(diff_between_dims) > 1:
-            raise ValueError("These segmentations don't seem to be from the same plane.")
+            print ("Warning! These segmentations don't seem to be from the same plane.")
         least_var_dim = np.argmin(diff_between_dims)
         coords_top, coords_bot = [], []
         for i in xrange(self.curve_top.dim):
@@ -85,36 +90,49 @@ class CCThickness():
         newcurve.siz = curve1.siz
         return newcurve
 
-    def compute_thickness(self, include_naive=True):
+    def find_medial_curve(self):
+        medial_curve_coords = self.curve_top.coords - (0.5)*(self.curve_top.coords - self.curve_bot_gamma_adjusted.coords)
+        self.medial_curve = Curve(medial_curve_coords)
+
+    def compute_thickness(self):
         #Just finds the euclidean distance between points
-        if include_naive:
-            self.naive_thickness = np.sqrt(np.sum((self.curve_top.coords - self.curve_bot.coords)**2, axis=0))
-        self.thickness = np.sqrt(np.sum((self.curve_top.coords - self.curve_bot_gamma_adjusted.coords)**2, axis=0))
-        print "Naive: ", np.average(self.naive_thickness),'\n'
-        print "Gamma: ", np.average(self.thickness),'\n'
-        print "% Difference: ", 100 * (np.average(self.naive_thickness-self.thickness))/(.5*(np.average(np.average(self.naive_thickness)+np.average(self.thickness)))),'\n\n'
-
+        self.unadjusted_thickness = np.sqrt(np.sum((self.curve_top.coords - self.curve_bot.coords)**2, axis=0))
+        self.adjusted_thickness = np.sqrt(np.sum((self.curve_top.coords - self.curve_bot_gamma_adjusted.coords)**2, axis=0))
+        #print "Naive: ", np.average(self.unadjusted_thickness),'\n'
+        #print "Gamma: ", np.average(self.adjusted_thickness),'\n'
+        #print "% Difference: ", 100 * (np.average(self.unadjusted_thickness-self.adjusted_thickness))/(.5*(np.average(np.average(self.unadjusted_thickness)+np.average(self.adjusted_thickness)))),'\n\n'
+        print "\n"
     def save_thickness(self):
-        np.savetxt(self.subject_name+"_thickness_values.txt", self.thickness)
+        np.savetxt(self.subject_name+"_adjusted_thickness_values.txt", self.adjusted_thickness)
+        np.savetxt(self.subject_name+"_unadjusted_thickness_values.txt", self.unadjusted_thickness)
 
-    def plot_thicknesses(self, include_naive_plot=True):
+    def plot_thicknesses(self, plot_title=False, include_naive_plot=True):
         set_fontsize = 10
         if include_naive_plot:
-            test_code_only = "\n% Difference: " + str(100 * (np.average(self.naive_thickness-self.thickness))/(.5*(np.average(np.average(self.naive_thickness)+np.average(self.thickness)))))
+            test_code_only = "\n% Difference of Mean Thickness Values: " + str( round(100 * (np.average(self.unadjusted_thickness-self.adjusted_thickness))/(.5*(np.average(np.average(self.unadjusted_thickness)+np.average(self.adjusted_thickness)))),2))
             plt.subplot(211)
-            plt.title(self.subject_name+test_code_only, fontsize=set_fontsize+1)
-            plt.subplots_adjust(hspace=0.4)
-            plt.tick_params(labelsize=set_fontsize)
-            plt.xlabel("Point to Point Matching" + '\n Avg Thickness = ' + str(np.average(self.naive_thickness)),fontsize=set_fontsize)
+            if plot_title:
+                plt.title(plot_title+test_code_only, fontsize=set_fontsize)
+            else:
+                plt.title(self.subject_name+test_code_only, fontsize=set_fontsize+1)
+            plt.subplots_adjust(hspace=0.2)
+            plt.tick_params(labelsize=set_fontsize, labelbottom=False, labelleft=False)
+            plt.xlabel("Uniform Matching", fontsize=set_fontsize)
             self.add_thickness_plot_given_curves(self.curve_top, self.curve_bot)
+            plt.plot(self.medial_curve.coords[0], self.medial_curve.coords[1])
             plt.subplot(212)
-            plt.xlabel("Elastic Matching " + '\n Avg Thickness = ' + str(np.average(self.thickness)), fontsize=set_fontsize)
+            plt.tick_params(labelsize=set_fontsize, labelbottom=False, labelleft=False)
+            plt.xlabel("Elastic Matching ", fontsize=set_fontsize)
             self.add_thickness_plot_given_curves(self.curve_top, self.curve_bot_gamma_adjusted)
+            plt.plot(self.medial_curve.coords[0], self.medial_curve.coords[1])
             plt.savefig(self.subject_name + ".pdf")
         else:
             plt.title(self.subject_name)
+            plt.subplot(111)
             self.add_thickness_plot_given_curves(self.curve_top, self.curve_bot_gamma_adjusted)
+            plt.plot(self.medial_curve.coords[0], self.medial_curve.coords[1])
             plt.savefig(self.subject_name + ".pdf")
+
 
     def add_thickness_plot_given_curves(self, curve1, curve2):
             plt.plot(curve1.coords[0], curve1.coords[1])
@@ -133,32 +151,39 @@ class CCThickness():
                 output_coords.append(np.array(list(self.curve_top.coords[coord_index]) +
                                               list(self.curve_bot_gamma_adjusted.coords[coord_index][::-1])))
             else:
-                fname = self.subject_name + "_native_thickness.ucf"
+                fname = self.subject_name + "_unadjusted_thickness.ucf"
                 output_coords.append(np.array(list(self.curve_top.coords[coord_index]) +
                                               list(self.curve_bot.coords[coord_index][::-1])))
         output_coords.insert(output_plane_dim, output_plane_data)
         output_coords = np.array(output_coords).transpose()
-        output_thickness = np.array(list(self.thickness) + list(self.thickness)[::-1])
+        output_thickness = np.array(list(self.adjusted_thickness) + list(self.adjusted_thickness)[::-1])
         WriteUCF(output_coords, "thickness", output_thickness, fname)
 
 
 def main():
     if len(sys.argv) <= 1:
-        return help()
+        pass
     else:
         subject_name = sys.argv[1]
         subject_top_curve_ucf = sys.argv[2]
         subject_bot_curve_ucf = sys.argv[3]
         subject_curve_out_dir = sys.argv[4]
+        if len(sys.argv ) > 5:
+            plot_title = sys.argv[5].replace("_", " ")
+        else:
+            plot_title = False
         subject_thickness = CCThickness(subject_name, subject_top_curve_ucf,
                                         subject_bot_curve_ucf)
-        os.chdir(subject_curve_out_dir)
-        subject_thickness.plot_thicknesses()
-        subject_thickness.save_thickness()
-        subject_thickness.output_thickness_ucf(True)
-        subject_thickness.output_thickness_ucf(False)
-        output_file = open(subject_thickness.subject_name + "_CCThickness_object.pickle", 'w')
-        cPickle.dump(subject_thickness, output_file)
-        output_file.close()
+
+        if type(subject_name) == type("string"):
+            os.chdir(subject_curve_out_dir)
+            subject_thickness.plot_thicknesses(plot_title)
+            subject_thickness.save_thickness()
+            subject_thickness.output_thickness_ucf(True)
+            subject_thickness.output_thickness_ucf(False)
+            #output_file = open(subject_thickness.subject_name + "_CCThickness_object.pickle", 'w')
+            #cPickle.dump(subject_thickness, output_file)
+            #output_file.close()
+
 
 main()

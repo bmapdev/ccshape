@@ -23,7 +23,7 @@ from shapeio.curveio import WriteUCF
 
 class CCThickness():
     def __init__(self, subject_name, curvefile_path_top, curvefile_path_bottom,
-                 adjust=True, resample_siz=500, geodesic_steps=5):
+                 adjust=True, resample_siz=500, geodesic_steps=2):
         self.settings = geodesics.Geodesic()
         self.settings.steps = geodesic_steps
         self.settings.closed = False

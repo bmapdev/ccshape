@@ -18,12 +18,13 @@ import matplotlib.pyplot as plt
 class CorpusCallosum:
 
     def __init__(self, subject_name, curvefile_path_top, curvefile_path_bottom, resample_siz=500,
-                 geodesic_steps=7, linear=False, template_curve=False, outdir = ''):
+                 geodesic_steps=7, linear=False, template_curve=False, linear_template_matching=False, outdir=''):
 
         self.settings = geodesics.Geodesic()
         self.settings.steps = geodesic_steps
         self.settings.closed = False
         self.linear = linear
+        self.linear_template_matching = linear_template_matching
         if type(template_curve) is str:
             self.template_curve = os.path.abspath(template_curve)
         elif template_curve:
@@ -72,16 +73,13 @@ class CorpusCallosum:
                 coords_bot.append(self.curve_bot.coords[i])
         self.curve_top.coords = np.array(coords_top)
         self.curve_bot.coords = np.array(coords_bot)
-        self.curve_bot_elastic = match.elastic_curve_matching(self.curve_top, self.curve_bot, self.settings)
+        self.curve_bot_elastic = match.elastic_curve_matching(self.curve_top, self.curve_bot, self.settings, linear=self.linear)
         self.gamma = self.curve_bot_elastic.geodesic.gamma
 
 
 
     def compute_thickness(self):
         self.match_top_and_bottom_curves()
-        if np.array_equal(self.curve_bot_elastic.coords, self.curve_bot.coords):
-            print self.gamma
-            raise ValueError("Gamma Adjustment not working")
         #Compute nonelastic thickness by finding the euclidean distance between uniformly sampled points
         self.nonelastic_thickness = np.sqrt(np.sum((self.curve_top.coords - self.curve_bot.coords)**2, axis=0))
         #Compute elastic thickness by finding the euclidean distance between elastically matched points
@@ -89,14 +87,14 @@ class CorpusCallosum:
         self.compute_medial_curve()
         if self.template_curve:
             if type(self.template_curve) == str:
-                self.template_curve = Curve(template_cruve)
+                self.template_curve = Curve(self.template_curve)
             self.join_top_and_bottom()
             self.joined_nonelastic_curve = match.elastic_curve_matching(self.template_curve,
-                                                                        self.joined_nonelastic_curve,self.settings)
+                                                                        self.joined_nonelastic_curve, self.settings, linear=self.linear_template_matching)
             self.joined_nonelastic_thickness = (Curve(np.array(self.joined_nonelastic_thickness)).return_reparameterized_by_gamma(
                 self.joined_nonelastic_curve.geodesic.gamma)).coords
             self.joined_elastic_curve = match.elastic_curve_matching(self.template_curve,
-                                                                     self.joined_elastic_curve, self.settings)
+                                                                     self.joined_elastic_curve, self.settings, linear=self.linear_template_matching)
             self.joined_elastic_thickness = (Curve(np.array(self.joined_elastic_thickness)).return_reparameterized_by_gamma(
                 self.joined_elastic_curve.geodesic.gamma)).coords
 
@@ -104,13 +102,20 @@ class CorpusCallosum:
         medial_curve_coords = self.curve_top.coords - (0.5)*(self.curve_top.coords - self.curve_bot_elastic.coords)
         self.medial_curve = Curve(medial_curve_coords)
 
+
     def output_thickness_ucf(self):
         if self.joined_elastic_curve == [] or self.joined_nonelastic_curve == []:
             self.join_top_and_bottom()
         if self.linear:
-            curveio.WriteUCF(self.joined_nonelastic_curve.coords.T, "thickness", self.joined_nonelastic_thickness, os.path.join(self.outdir, self.subject_name +"_reg" * bool(self.template_curve)+ "_nonelastic_thickness.ucf"))
+            curveio.WriteUCF(self.joined_nonelastic_curve.coords.T, "thickness", self.joined_nonelastic_thickness,
+                             os.path.join(self.outdir, self.subject_name +
+                                          "_uniform" * bool(self.linear_template_matching)*bool(self.template_curve) +
+                                          "_reg" * bool(self.template_curve) + "_nonelastic_thickness.ucf"))
         else:
-            curveio.WriteUCF(self.joined_elastic_curve.coords.T, "thickness", self.joined_elastic_thickness, os.path.join(self.outdir, self.subject_name +"_reg" * bool(self.template_curve)+ "_elastic_thickness.ucf"))
+            curveio.WriteUCF(self.joined_elastic_curve.coords.T, "thickness", self.joined_elastic_thickness,
+                             os.path.join(self.outdir, self.subject_name +
+                                          "_uniform" * bool(self.linear_template_matching)*bool(self.template_curve) +
+                                          "_reg" * bool(self.template_curve) + "_elastic_thickness.ucf"))
 
     def join_top_and_bottom(self):
         if self.joined_nonelastic_curve != [] or self.joined_elastic_curve != []:
@@ -140,14 +145,19 @@ class CorpusCallosum:
         set_fontsize = 10
         if bool(self.template_curve):
             if self.linear:
-                plotting.plot_matching(self.subject_name + '_template_matching_' +
-                                       'linear', self.template_curve, self.joined_nonelastic_curve,
+                plotting.plot_matching(self.subject_name + '_uniform_' * self.linear_template_matching *
+                                       bool(self.template_curve) +
+                                       '_template_matching_' * bool(self.template_curve) + 'linear',
+                                       self.template_curve, self.joined_nonelastic_curve,
                                        outdir=self.outdir)
             else:
-                plotting.plot_matching(self.subject_name + '_template_matching_' +
-                                       'elastic', self.template_curve, self.joined_elastic_curve,
+                plotting.plot_matching(self.subject_name + '_uniform_' * self.linear_template_matching *
+                                       bool(self.template_curve)
+                                       + '_template_matching_' * bool(self.template_curve) + 'elastic',
+                                       self.template_curve, self.joined_elastic_curve,
                                        outdir=self.outdir)
-        if plot_both:
+
+        if plot_both:  #### Old code. Remove?
             test_code_only = "\n% Difference of Mean Thickness Values: " + \
                              str(round(100 * (np.average(self.nonelastic_thickness-self.elastic_thickness)) /
                                        (0.5*(np.average(np.average(self.nonelastic_thickness) +
@@ -181,7 +191,7 @@ class CorpusCallosum:
                 self.add_thickness_plot_given_curves(self.curve_top, self.curve_bot_elastic)
             plt.plot(self.medial_curve.coords[0], self.medial_curve.coords[1])
             plt.savefig(os.path.join(self.outdir, self.subject_name + "_linear"*plot_linear +
-                                                  "_elastic"*(not plot_linear)+ ".pdf"))
+                                     "_elastic"*(not plot_linear) + ".pdf"))
             plt.close()
 
     def add_thickness_plot_given_curves(self, curve1, curve2):

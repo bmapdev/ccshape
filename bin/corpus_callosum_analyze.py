@@ -17,6 +17,7 @@ def main():
     parser.add_argument('topCurves', help='Ordered list of paths to top callosal segmentation files')
     parser.add_argument('botCurves', help='Ordered list of paths to bottom callosal segmenation files')
     parser.add_argument('-templateID', dest='templateID', help='SubjectID associated with curves to be used as template for group registration', default=False, required=False)
+    parser.add_argument('-linearTemplate', dest='linearTemplate', help='Do not use elastic matching if template id is specified.', action='store_true', default=False, required=False)
     parser.add_argument('-listInput', dest='listInput', help='Input curves names directly into arguments', action='store_true', default=False, required=False)
     parser.add_argument('-open', dest='open_curves', help='match open curves', action='store_true', default=False, required=False)
     parser.add_argument('-linear', dest='linear', help='use linear matching', action='store_true', default=False, required=False)
@@ -26,11 +27,11 @@ def main():
     parser.add_argument('-resize', dest='resize', help='resize to the specified number of vertices', required=False, default=100)
     args = parser.parse_args()
     corpus_callosum_analyze(args.subjectIDs, args.topCurves, args.botCurves, args.templateID, args.listInput,
-                            args.open_curves, args.linear, args.norotate, args.noplot, args.odir, args.resize)
+                            args.open_curves, args.linear, args.norotate, args.noplot, args.odir, args.resize, args.linearTemplate)
 
 
 def corpus_callosum_analyze(subject_ids, top_curves, bot_curves, template_id, list_input,
-                            open_curves, linear, no_rotate, no_plot, odir, resize):
+                            open_curves, linear, no_rotate, no_plot, odir, resize, linear_template_matching):
 
     if not list_input:
         subject_ids = open(os.path.abspath(subject_ids))
@@ -42,11 +43,13 @@ def corpus_callosum_analyze(subject_ids, top_curves, bot_curves, template_id, li
     print 'template_id = ', template_id,'\n\n'
 
     if template_id:
+        if template_id not in subject_ids:
+            raise ValueError("Invalid template ID!")
         if not os.path.exists(os.path.join(odir, 'template')):
             os.makedirs(os.path.join(odir, 'template'))
         template_index = subject_ids.index(template_id)
         template_cc = CorpusCallosum(template_id, top_curves[template_index], bot_curves[template_index],
-                                     linear=linear, outdir=os.path.join(odir, 'template'))
+                                     linear=linear, outdir=os.path.join(odir, 'template'), linear_template_matching=linear_template_matching)
 
         template_cc.compute_thickness()
         template_cc.output_thickness_ucf()
@@ -68,7 +71,8 @@ def corpus_callosum_analyze(subject_ids, top_curves, bot_curves, template_id, li
         if not os.path.exists(os.path.join(odir, subject_ids[i])):
             os.makedirs(os.path.join(odir, subject_ids[i]))
         current_cc = CorpusCallosum(subject_ids[i], top_curves[i], bot_curves[i], linear=linear,
-                                    template_curve=template_curve, outdir=os.path.join(odir, subject_ids[i]))
+                                    template_curve=template_curve, outdir=os.path.join(odir, subject_ids[i]),
+                                    linear_template_matching=linear_template_matching)
         current_cc.compute_thickness()
         current_cc.output_thickness_ucf()
         current_cc.plot_thicknesses(plot_linear=linear)

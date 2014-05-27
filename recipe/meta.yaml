@@ -3,7 +3,7 @@ package:
     version: "0.0.1"
 
 source:
-    git_url: https://bitbucket.org/bayers/ccshape
+    git_url: https://bayers@bitbucket.org/bayers/ccshape.git
 	
 requirements:
     build:

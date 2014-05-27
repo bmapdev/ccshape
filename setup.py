@@ -14,7 +14,7 @@ setup(
     packages=['ccshape'],
     package_dir={'ccshape': base_dir, },
     test_suite='nose.collector',
-    scripts=['bin/corpus_callosum_thickness.py','bin/corpus_callosum_analyze.py'],
+    scripts=['bin/corpus_callosum_thickness.py', 'bin/corpus_callosum_analyze.py'],
     license='MIT/TBD',
     exclude_package_data={'': ['.gitignore', '.idea']},
     author='Brandon Ayers, Shantanu H. Joshi',

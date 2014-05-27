@@ -17,7 +17,7 @@ import matplotlib.pyplot as plt
 
 class CorpusCallosum:
 
-    def __init__(self, subject_name, curvefile_path_top, curvefile_path_bottom, resample_siz=500,
+    def __init__(self, subject_name, curvefile_path_top, curvefile_path_bottom, resample_siz=100,
                  geodesic_steps=7, linear=False, template_curve=False, linear_template_matching=False, outdir=''):
 
         self.settings = geodesics.Geodesic()
@@ -200,3 +200,4 @@ class CorpusCallosum:
             for i in xrange(0, len(curve1.coords[0])):
                 plt.plot([curve1.coords[0][i], curve2.coords[0][i]],
                          [curve1.coords[1][i], curve2.coords[1][i]])
+    

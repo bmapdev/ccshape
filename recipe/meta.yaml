@@ -1,0 +1,15 @@
+package:
+    name: corpus-callosum-thickness
+    version: "0.0.1"
+
+source:
+    git_url: https://bitbucket.org/bayers/ccshape
+	
+requirements:
+    build:
+        - python
+    run:
+        - python
+        - numpy
+        - shapeio
+        - curvematch

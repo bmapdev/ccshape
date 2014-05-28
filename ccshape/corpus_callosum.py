@@ -12,6 +12,8 @@ from curvematch.curve import Curve
 from curvematch import plotting
 import os
 from shapeio import curveio
+import matplotlib
+matplotlib.use('PDF')
 import matplotlib.pyplot as plt
 
 

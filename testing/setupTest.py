@@ -9,7 +9,16 @@ import os
 import sys
 
 def main():
-    print "'\nStarting setup...'\n"
+    print "\nStarting setup...\n"
+    print "Testing rpy2..."
+    try:
+        import rpy2.robjects
+        print "Success! R and rpy2 are installed.\n"
+    except:
+        print "rpy2 test failure! R or rpy2 are not installed correctly!'\n"
+        print "Stats portion will not function until this is fixed.'\n"
+
+    print "Testing corpus callosum thickness package...'\n"
     names = open("names.txt", "w")
     top_curves = open("topCurvePaths.txt", "w")
     bot_curves = open("botCurvePaths.txt", "w")

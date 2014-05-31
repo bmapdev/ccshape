@@ -25,11 +25,13 @@ def main():
     names = open("names.txt", "w")
     top_curves = open("topCurvePaths.txt", "w")
     bot_curves = open("botCurvePaths.txt", "w")
+    curve_counter = 1
     for curve in os.listdir(os.getcwd()+"/dataSample/"):
-        if 'top' in curve:
-            names.write(curve.split('_top.ucf')[0]+'\n')
+        if 'top' in curve.lower():
+            names.write('curve'+str(curve_counter)+'\n')
+            curve_counter += 1
             top_curves.write(os.getcwd()+"/dataSample/"+curve+'\n')
-        if 'bot' in curve:
+        if 'bot' in curve.lower():
             bot_curves.write(os.getcwd()+"/dataSample/"+curve+'\n')
     names.close()
     top_curves.close()

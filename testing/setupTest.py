@@ -18,7 +18,7 @@ def main():
         print "rpy2 test failure! R or rpy2 are not installed correctly!'\n"
         print "Stats portion will not function until this is fixed.'\n"
 
-    print "Testing corpus callosum thickness package...'\n"
+    print "Testing corpus callosum thickness package...\n"
     names = open("names.txt", "w")
     top_curves = open("topCurvePaths.txt", "w")
     bot_curves = open("botCurvePaths.txt", "w")

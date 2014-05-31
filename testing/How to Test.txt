@@ -1,3 +1,3 @@
-To attempt to run the sample data, use the following command run the following command,
+To attempt to run the sample data, run the following command,
 
-/$path to this python enviroment$/bin/python /$path to this python enviroment$/testing/setup_test.py
+/$path to this python enviroment$/bin/python /$path to this testing directory$/setup_test.py

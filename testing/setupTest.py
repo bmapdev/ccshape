@@ -19,6 +19,9 @@ def main():
         print "Stats portion will not function until this is fixed.'\n"
 
     print "Testing corpus callosum thickness package...\n"
+    test_dir_location = os.path.dirname(os.path.realpath(__file__))
+    print test_dir_location
+    os.chdir(test_dir_location)
     names = open("names.txt", "w")
     top_curves = open("topCurvePaths.txt", "w")
     bot_curves = open("botCurvePaths.txt", "w")
@@ -34,7 +37,7 @@ def main():
     print "Setup Completed! To run the test, run the following command,\n"
     bindir = os.path.dirname(sys.executable)
     print sys.executable, " ", bindir+ "/corpus_callosum_analyze.py", " ", os.getcwd() + \
-          "/names.txt", os.getcwd() + "/topCurvePaths.txt", os.getcwd() + "/botCurvePaths.txt" +" "+ "-odir " +os.getcwd()+"/testOutput"
+          "/names.txt", os.getcwd() + "/topCurvePaths.txt", os.getcwd() + "/botCurvePaths.txt" +" "+ "-odir " + os.getcwd()+"/testOutput"
 
 if __name__ == "__main__":
     main()

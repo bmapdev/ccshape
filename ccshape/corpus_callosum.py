@@ -111,7 +111,7 @@ class CorpusCallosum:
             curveio.WriteUCF(self.joined_nonelastic_curve.coords.T, "thickness", self.joined_nonelastic_thickness,
                              os.path.join(self.outdir, self.subject_name +
                                           "_uniform" * bool(self.linear_template_matching)*bool(self.template_curve) +
-                                          "_reg" * bool(self.template_curve) + "_nonelastic_thickness.ucf"))
+                                          "_reg" * bool(self.template_curve) + "_linear_thickness.ucf"))
         else:
             curveio.WriteUCF(self.joined_elastic_curve.coords.T, "thickness", self.joined_elastic_thickness,
                              os.path.join(self.outdir, self.subject_name +

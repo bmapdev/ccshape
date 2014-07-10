@@ -104,7 +104,6 @@ class CorpusCallosum:
         medial_curve_coords = self.curve_top.coords - (0.5)*(self.curve_top.coords - self.curve_bot_elastic.coords)
         self.medial_curve = Curve(medial_curve_coords)
 
-
     def output_thickness_ucf(self):
         if self.joined_elastic_curve == [] or self.joined_nonelastic_curve == []:
             self.join_top_and_bottom()
@@ -158,28 +157,6 @@ class CorpusCallosum:
                                        + '_template_matching_' * bool(self.template_curve) + 'elastic',
                                        self.template_curve, self.joined_elastic_curve,
                                        outdir=self.outdir)
-
-        if plot_both:  #### Old code. Remove?
-            test_code_only = "\n% Difference of Mean Thickness Values: " + \
-                             str(round(100 * (np.average(self.nonelastic_thickness-self.elastic_thickness)) /
-                                       (0.5*(np.average(np.average(self.nonelastic_thickness) +
-                                        np.average(self.elastic_thickness)))), 2))
-            plt.subplot(211)
-            if plot_title:
-                plt.title(plot_title+test_code_only, fontsize=set_fontsize)
-            else:
-                plt.title(self.subject_name+test_code_only, fontsize=set_fontsize+1)
-            plt.subplots_adjust(hspace=0.2)
-            plt.tick_params(labelsize=set_fontsize, labelbottom=False, labelleft=False)
-            plt.xlabel("Uniform Matching", fontsize=set_fontsize)
-            self.add_thickness_plot_given_curves(self.curve_top, self.curve_bot)
-            plt.plot(self.medial_curve.coords[0], self.medial_curve.coords[1])
-            plt.subplot(212)
-            plt.tick_params(labelsize=set_fontsize, labelbottom=False, labelleft=False)
-            plt.xlabel("Elastic Matching ", fontsize=set_fontsize)
-            self.add_thickness_plot_given_curves(self.curve_top, self.curve_bot_elastic)
-            plt.plot(self.medial_curve.coords[0], self.medial_curve.coords[1])
-            plt.savefig(self.subject_name + ".pdf")
         else:
             if plot_title:
                 plt.title(plot_title)
@@ -196,10 +173,26 @@ class CorpusCallosum:
                                      "_elastic"*(not plot_linear) + ".pdf"))
             plt.close()
 
+    def plot_thickness_comparison(self):
+        set_fontsize = 10
+        ax = plt.subplot(111)
+        plt.title(self.subject_name+" Elastic vs Linear thickness")
+        plt.xlabel("Point number")
+        plt.ylabel("Thickness value")
+        ax.plot(self.nonelastic_thickness, label="Linear Thickness")
+        ax.plot(self.elastic_thickness, label="Elastic Thickness")
+        handles, labels = ax.get_legend_handles_labels()
+        ax.legend(handles, labels)
+        plt.savefig(os.path.join(self.outdir, self.subject_name + "_thickness_comparison" + ".pdf"))
+        plt.close()
+
+    def save_run_data(self):
+        np.savetxt(os.path.join(self.outdir, self.subject_name + "_gamma.csv"), self.gamma, delimiter=",")
+
+
     def add_thickness_plot_given_curves(self, curve1, curve2):
             plt.plot(curve1.coords[0], curve1.coords[1])
             plt.plot(curve2.coords[0], curve2.coords[1])
             for i in xrange(0, len(curve1.coords[0])):
                 plt.plot([curve1.coords[0][i], curve2.coords[0][i]],
                          [curve1.coords[1][i], curve2.coords[1][i]])
-    

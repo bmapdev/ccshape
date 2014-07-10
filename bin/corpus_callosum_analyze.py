@@ -53,7 +53,11 @@ def corpus_callosum_analyze(subject_ids, top_curves, bot_curves, template_id, li
 
         template_cc.compute_thickness()
         template_cc.output_thickness_ucf()
-        template_cc.plot_thicknesses()
+        if not no_plot:
+            template_cc.plot_thicknesses()
+            if not linear and not linear_template_matching:
+                template_cc.plot_thickness_comparison()
+        template_cc.save_run_data()
 
         if linear:
             template_curve = template_cc.joined_nonelastic_curve
@@ -75,7 +79,11 @@ def corpus_callosum_analyze(subject_ids, top_curves, bot_curves, template_id, li
                                     linear_template_matching=linear_template_matching)
         current_cc.compute_thickness()
         current_cc.output_thickness_ucf()
-        current_cc.plot_thicknesses(plot_linear=linear)
+        if not no_plot:
+            current_cc.plot_thicknesses(plot_linear=linear)
+            if not linear and not linear_template_matching:
+                current_cc.plot_thickness_comparison()
+        current_cc.save_run_data()
 
 if __name__ == '__main__':
     main()

@@ -12,6 +12,7 @@ from curvematch.curve import Curve
 from curvematch import plotting
 import os
 from shapeio import curveio
+from shapeio import convert
 import matplotlib
 matplotlib.use('PDF')
 import matplotlib.pyplot as plt
@@ -20,7 +21,7 @@ import matplotlib.pyplot as plt
 class CorpusCallosum:
 
     def __init__(self, subject_name, curvefile_path_top, curvefile_path_bottom, resample_siz=100,
-                 geodesic_steps=7, linear=False, template_curve=False, linear_template_matching=False, outdir=''):
+                 geodesic_steps=5, linear=False, template_curve=False, linear_template_matching=False, outdir=''):
 
         self.settings = geodesics.Geodesic()
         self.settings.steps = geodesic_steps
@@ -63,8 +64,6 @@ class CorpusCallosum:
         self.curve_top.resample_curve_uniform(self.resample_siz)
         self.curve_bot.resample_curve_uniform(self.resample_siz)
         diff_between_dims = np.abs(np.sum(self.curve_top.coords - self.curve_bot.coords, 1))
-        #if np.min(diff_between_dims) > 1:
-            #print ("Warning! These segmentations don't seem to be from the same plane.")
         least_var_dim = np.argmin(diff_between_dims)
         coords_top, coords_bot = [], []
         for i in xrange(self.curve_top.dim()):
@@ -104,19 +103,27 @@ class CorpusCallosum:
         medial_curve_coords = self.curve_top.coords - (0.5)*(self.curve_top.coords - self.curve_bot_elastic.coords)
         self.medial_curve = Curve(medial_curve_coords)
 
-    def output_thickness_ucf(self):
+    def output_thickness_ucf(self, convert_to_vtp=True):
         if self.joined_elastic_curve == [] or self.joined_nonelastic_curve == []:
             self.join_top_and_bottom()
         if self.linear:
+            output_file_name = os.path.join(self.outdir, self.subject_name +
+                                          "_uniform" * bool(self.linear_template_matching)*bool(self.template_curve) +
+                                          "_reg" * bool(self.template_curve) + "_linear_thickness")
             curveio.WriteUCF(self.joined_nonelastic_curve.coords.T, "thickness", self.joined_nonelastic_thickness,
-                             os.path.join(self.outdir, self.subject_name +
-                                          "_uniform" * bool(self.linear_template_matching)*bool(self.template_curve) +
-                                          "_reg" * bool(self.template_curve) + "_linear_thickness.ucf"))
+                             output_file_name + ".ucf")
         else:
-            curveio.WriteUCF(self.joined_elastic_curve.coords.T, "thickness", self.joined_elastic_thickness,
-                             os.path.join(self.outdir, self.subject_name +
+            output_file_name = os.path.join(self.outdir, self.subject_name +
                                           "_uniform" * bool(self.linear_template_matching)*bool(self.template_curve) +
-                                          "_reg" * bool(self.template_curve) + "_elastic_thickness.ucf"))
+                                          "_reg" * bool(self.template_curve) + "_elastic_thickness")
+
+            curveio.WriteUCF(self.joined_elastic_curve.coords.T, "thickness", self.joined_elastic_thickness,
+                             output_file_name + ".ucf")
+        if convert_to_vtp:
+            convert.curve_format(output_file_name+'.ucf', output_file_name+'.vtp')
+
+
+
 
     def join_top_and_bottom(self):
         if self.joined_nonelastic_curve != [] or self.joined_elastic_curve != []:
@@ -158,17 +165,18 @@ class CorpusCallosum:
                                        self.template_curve, self.joined_elastic_curve,
                                        outdir=self.outdir)
         else:
+            fig = plt.figure(1)
             if plot_title:
                 plt.title(plot_title)
             else:
                 plt.title(self.subject_name + '\nLinear Matching' * plot_linear +
                           '\nElastic Matching' * (not plot_linear))
-            plt.subplot(111)
             if plot_linear:
                 self.add_thickness_plot_given_curves(self.curve_top, self.curve_bot)
             else:
                 self.add_thickness_plot_given_curves(self.curve_top, self.curve_bot_elastic)
             plt.plot(self.medial_curve.coords[0], self.medial_curve.coords[1])
+            plt.axis('equal')
             plt.savefig(os.path.join(self.outdir, self.subject_name + "_linear"*plot_linear +
                                      "_elastic"*(not plot_linear) + ".pdf"))
             plt.close()

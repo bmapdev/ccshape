@@ -70,7 +70,7 @@ def corpus_callosum_analyze(subject_ids, top_curves, bot_curves, template_id, li
         if template_id:
             if i == template_index:
                 continue
-        if not (os.path.isfile(top_curves[i]) or not os.path.isfile(bot_curves[i])):
+        if not (os.path.isfile(top_curves[i]) or os.path.isfile(bot_curves[i])):
             raise ValueError(subject_ids[i]+" is missing a curve file!")
         if not os.path.exists(os.path.join(odir, subject_ids[i])):
             os.makedirs(os.path.join(odir, subject_ids[i]))

@@ -21,7 +21,8 @@ import matplotlib.pyplot as plt
 class CorpusCallosum:
 
     def __init__(self, subject_name, curvefile_path_top, curvefile_path_bottom, resample_siz=100,
-                 geodesic_steps=5, linear=False, template_curve=False, linear_template_matching=False, outdir=''):
+                 geodesic_steps=5, linear=False, template_curve=False, linear_template_matching=False,
+                 outdir='', alt_registration=False):
 
         self.settings = geodesics.Geodesic()
         self.settings.steps = geodesic_steps
@@ -34,6 +35,7 @@ class CorpusCallosum:
             self.template_curve = template_curve
         else:
             self.template_curve = False
+        self.alt_registration = alt_registration
 
         self.subject_name = subject_name
         self.return_shapes = True
@@ -92,12 +94,25 @@ class CorpusCallosum:
             self.join_top_and_bottom()
             self.joined_nonelastic_curve = match.elastic_curve_matching(self.template_curve,
                                                                         self.joined_nonelastic_curve, self.settings, linear=self.linear_template_matching)
-            self.joined_nonelastic_thickness = (Curve(np.array(self.joined_nonelastic_thickness)).return_reparameterized_by_gamma(
-                self.joined_nonelastic_curve.geodesic.gamma)).coords
             self.joined_elastic_curve = match.elastic_curve_matching(self.template_curve,
                                                                      self.joined_elastic_curve, self.settings, linear=self.linear_template_matching)
-            self.joined_elastic_thickness = (Curve(np.array(self.joined_elastic_thickness)).return_reparameterized_by_gamma(
-                self.joined_elastic_curve.geodesic.gamma)).coords
+
+            ### Change to compute the Euclidean distance on template match curve to get registered thickness.
+            if self.alt_registration:
+                nonelastic_reg_curve_top = self.joined_nonelastic_curve.coords[:, :self.joined_elastic_curve.siz()//2]
+                nonelastic_reg_curve_bot = self.joined_nonelastic_curve.coords[:, self.joined_elastic_curve.siz()//2:][:, ::-1]
+                elastic_reg_curve_top = self.joined_nonelastic_curve.coords[:, :self.joined_elastic_curve.siz()//2]
+                elastic_reg_curve_bot = self.joined_nonelastic_curve.coords[:, self.joined_elastic_curve.siz()//2:][:, ::-1]
+
+                nonelastic_thickness = np.sqrt(np.sum((nonelastic_reg_curve_top - nonelastic_reg_curve_bot)**2, axis=0))
+                elastic_thickness = np.sqrt(np.sum((elastic_reg_curve_top - elastic_reg_curve_bot)**2, axis=0))
+                self.joined_nonelastic_thickness = np.array(list(nonelastic_thickness)+list(nonelastic_thickness)[::-1])
+                self.joined_elastic_thickness = np.array(list(elastic_thickness)+list(elastic_thickness)[::-1])
+            else:
+                self.joined_nonelastic_thickness = (Curve(np.array(self.joined_nonelastic_thickness)).return_reparameterized_by_gamma(
+                    self.joined_nonelastic_curve.geodesic.gamma)).coords
+                self.joined_elastic_thickness = (Curve(np.array(self.joined_elastic_thickness)).return_reparameterized_by_gamma(
+                    self.joined_elastic_curve.geodesic.gamma)).coords
 
     def compute_medial_curve(self):
         medial_curve_coords = self.curve_top.coords - (0.5)*(self.curve_top.coords - self.curve_bot_elastic.coords)
@@ -195,7 +210,11 @@ class CorpusCallosum:
         plt.close()
 
     def save_run_data(self):
-        np.savetxt(os.path.join(self.outdir, self.subject_name + "_gamma.csv"), self.gamma, delimiter=",")
+        np.savetxt(os.path.join(self.outdir, self.subject_name + "_thickness_gamma.csv"), self.gamma, delimiter=",")
+        if self.template_curve:
+            np.savetxt(os.path.join(self.outdir, self.subject_name + "_registration_gamma.csv"),
+                   self.joined_elastic_curve.geodesic.gamma, delimiter=",")
+
 
 
     def add_thickness_plot_given_curves(self, curve1, curve2):

@@ -210,10 +210,11 @@ class CorpusCallosum:
         plt.close()
 
     def save_run_data(self):
-        np.savetxt(os.path.join(self.outdir, self.subject_name + "_thickness_gamma.csv"), self.gamma, delimiter=",")
+        np.savetxt(os.path.join(self.outdir, self.subject_name + "_thickness_gamma.csv"),
+                   self.gamma, fmt="%f", delimiter=',')
         if self.template_curve:
             np.savetxt(os.path.join(self.outdir, self.subject_name + "_registration_gamma.csv"),
-                   self.joined_elastic_curve.geodesic.gamma, delimiter=",")
+                   self.joined_elastic_curve.geodesic.gamma, fmt="%f", delimiter=',')
 
 
 

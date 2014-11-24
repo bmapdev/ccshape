@@ -30,7 +30,7 @@ def main():
 
 
 def corpus_callosum_analyze(subject_ids, top_curves, bot_curves, odir, template_id, list_input=False,
-                            open_curves=False, linear=False, no_rotate=False, no_plot=False, resize=100, linear_template_matching=False, altReg=False):
+                            open_curves=False, linear=False, no_rotate=False, no_plot=False, resize=300, linear_template_matching=False, altReg=False):
     import curvematch
     import numpy as np
     from ccshape.corpus_callosum import CorpusCallosum

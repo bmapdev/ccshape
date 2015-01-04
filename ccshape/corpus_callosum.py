@@ -5,21 +5,22 @@ __copyright__ = "Copyright 2013, Brandon Ayers, Shantanu H. Joshi \
                  Ahmanson-Lovelace Brain Mapping Center, University of California Los Angeles"
 __email__ = "ayersb@ucla.edu"
 
+import os
+
 import numpy as np
+import matplotlib
+import matplotlib.pyplot as plt
+matplotlib.use('PDF')
+
 from curvematch import match
 from curvematch import geodesics
 from curvematch.curve import Curve
 from curvematch import plotting
-import os
 from shapeio import curveio
 from shapeio import convert
-import matplotlib
-matplotlib.use('PDF')
-import matplotlib.pyplot as plt
 
 
 class CorpusCallosum:
-
     def __init__(self, subject_name, curvefile_path_top, curvefile_path_bottom, resample_siz=100,
                  geodesic_steps=5, linear=False, template_curve=False, linear_template_matching=False,
                  outdir='', alt_registration=False):
@@ -35,6 +36,7 @@ class CorpusCallosum:
             self.template_curve = template_curve
         else:
             self.template_curve = False
+
         self.alt_registration = alt_registration
 
         self.subject_name = subject_name

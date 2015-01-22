@@ -31,9 +31,9 @@ def main():
 
 def corpus_callosum_analyze(subject_ids, top_curves, bot_curves, odir, template_id, list_input=False,
                             open_curves=False, linear=False, no_rotate=False, no_plot=False, resize=300, linear_template_matching=False, altReg=False):
-    import curvematch
-    import numpy as np
-    from ccshape.corpus_callosum import CorpusCallosum
+    """ Takes as input
+    """
+    from ccthickness.corpus_callosum import CorpusCallosum
     if not list_input:
         subject_ids = open(os.path.abspath(subject_ids))
         subject_ids = subject_ids.read().split()
@@ -56,7 +56,7 @@ def corpus_callosum_analyze(subject_ids, top_curves, bot_curves, odir, template_
         template_cc.compute_thickness()
         template_cc.output_thickness_ucf()
         if not no_plot:
-            template_cc.plot_thicknesses()
+            template_cc.plot_thickness()
             if not linear and not linear_template_matching:
                 template_cc.plot_thickness_comparison()
         template_cc.save_run_data()
@@ -82,7 +82,7 @@ def corpus_callosum_analyze(subject_ids, top_curves, bot_curves, odir, template_
         current_cc.compute_thickness()
         current_cc.output_thickness_ucf()
         if not no_plot:
-            current_cc.plot_thicknesses(plot_linear=linear)
+            current_cc.plot_thickness(plot_linear=linear)
             if not linear and not linear_template_matching:
                 current_cc.plot_thickness_comparison()
         current_cc.save_run_data()

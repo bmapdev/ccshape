@@ -27,7 +27,7 @@ from shapeio import curveio
 from shapeio import convert
 
 
-class CorpusCallosum:
+class CorpusCallosum(object):
     """ Hold and process callosal curve segmentation information"""
     def __init__(self, subject_name, curvefile_path_top, curvefile_path_bottom, resample_siz=100,
                  geodesic_steps=5, linear=False, template_curve=False, linear_template_matching=False,
@@ -44,7 +44,8 @@ class CorpusCallosum:
         self.resample_siz = resample_siz
         self.rotation = False
         self.outdir = outdir
-
+        print curvefile_path_top
+        print curvefile_path_bottom
         if type(template_curve) is str:
             self.template_curve = os.path.abspath(template_curve)
         elif template_curve:
@@ -54,7 +55,7 @@ class CorpusCallosum:
 
         self.curvefile_path_top = os.path.abspath(curvefile_path_top)
         self.curvefile_path_bottom = os.path.abspath(curvefile_path_bottom)
-        self.gammas = []
+        self.gamma = []
         self.curve_top = Curve(file=self.curvefile_path_top)
         self.curve_bot = Curve(file=self.curvefile_path_bottom)
         self.medial_curve = []
@@ -65,52 +66,16 @@ class CorpusCallosum:
         self.attributes_elastic_matching = []
 
         self.joined_curve_elastic = []
-        self.joined_attributes_elastic = []
         self.joined_curve_linear = []
+        self.joined_attributes_elastic = []
         self.joined_attributes_linear = []
-        #self.compute_thickness()
+        self.template_geodesic_elastic = []
+        self.template_geodesic_linear = []
+        self._compute()
 
-    def compute_thickness(self):
-        self._match_top_and_bottom_curves()
-        # Compute nonelastic thickness by finding the euclidean distance between points
-        self.attributes_linear_matching = np.sqrt(np.sum((self.curve_top.coords - self.curve_bot.coords)**2, axis=0))
-        self.attributes_elastic_matching = np.sqrt(np.sum((self.curve_top.coords - self.curve_bot_elastic.coords)**2, axis=0))
-        self._compute_medial_curve()
 
-        # If a template curve was specified, match the joined output curves to it.
-        if self.template_curve:
-            if type(self.template_curve) == str:
-                self.template_curve = Curve(self.template_curve)
-            self._join_top_and_bottom()
-            self.joined_curve_linear = \
-                match.elastic_curve_matching(self.template_curve, self.joined_curve_linear,
-                                             self.settings, linear=self.linear_template_matching)
-            self.joined_curve_elastic = \
-                match.elastic_curve_matching(self.template_curve, self.joined_curve_elastic,
-                                             self.settings, linear=self.linear_template_matching)
-            # Compute thickness for registered curve.
-            if self.alt_registration:
-                # Change to compute the Euclidean distance on template match curve to get registered thickness
-                nonelastic_reg_curve_top = self.joined_curve_linear.coords[:, :self.joined_curve_elastic.siz()//2]
-                nonelastic_reg_curve_bot = self.joined_curve_linear.coords[:, self.joined_curve_elastic.siz()//2:][:, ::-1]
-                elastic_reg_curve_top = self.joined_curve_linear.coords[:, :self.joined_curve_elastic.siz()//2]
-                elastic_reg_curve_bot = self.joined_curve_linear.coords[:, self.joined_curve_elastic.siz()//2:][:, ::-1]
 
-                nonelastic_thickness = np.sqrt(np.sum((nonelastic_reg_curve_top - nonelastic_reg_curve_bot)**2, axis=0))
-                elastic_thickness = np.sqrt(np.sum((elastic_reg_curve_top - elastic_reg_curve_bot)**2, axis=0))
-                self.joined_attributes_linear = np.array(list(nonelastic_thickness)+list(nonelastic_thickness)[::-1])
-                self.joined_attributes_elastic = np.array(list(elastic_thickness)+list(elastic_thickness)[::-1])
-            else:
-                # Obtain new thickness values by reparameterizing values for thickness computed using linear matching
-                # with elastic matching output values.
-                self.joined_attributes_linear = \
-                    (Curve(np.array(self.joined_attributes_linear)).
-                     return_reparameterized_by_gamma(self.joined_curve_linear.geodesic.gamma)).coords
-                self.joined_attributes_elastic = \
-                    (Curve(np.array(self.joined_attributes_elastic)).
-                     return_reparameterized_by_gamma(self.joined_curve_elastic.geodesic.gamma)).coords
-
-    def output_thickness_ucf(self, convert_to_vtp=True):
+    def output_ucf(self, convert_to_vtp=True):
         if self.joined_curve_elastic == [] or self.joined_curve_linear == []:
             self._join_top_and_bottom()
         if self.linear:
@@ -129,7 +94,7 @@ class CorpusCallosum:
         if convert_to_vtp:
             convert.curve_format(output_file_name+'.ucf', output_file_name+'.vtp')
 
-    def plot_thickness(self, plot_title=False, plot_linear=False, plot_both=False):
+    def plot(self, plot_title=False, plot_linear=False, plot_both=False):
         set_fontsize = 10
         if bool(self.template_curve):
             if self.linear:
@@ -151,24 +116,21 @@ class CorpusCallosum:
             else:
                 plt.title(self.subject_name + '\nLinear Matching' * plot_linear +
                           '\nElastic Matching' * (not plot_linear))
-            if plot_linear:
-                self._add_thickness_plot_given_curves(self.curve_top, self.curve_bot)
-            else:
-                self._add_thickness_plot_given_curves(self.curve_top, self.curve_bot_elastic)
+            self._attribute_plot()
             plt.plot(self.medial_curve.coords[0], self.medial_curve.coords[1])
             plt.axis('equal')
             plt.savefig(os.path.join(self.outdir, self.subject_name + "_linear"*plot_linear +
                                      "_elastic"*(not plot_linear) + ".pdf"))
             plt.close()
 
-    def plot_thickness_comparison(self):
+    def plot_comparison(self):
         if self.linear:
             return
         set_fontsize = 10
         ax = plt.subplot(111)
-        plt.title(self.subject_name+" Elastic vs Linear thickness")
-        plt.xlabel("Point number")
-        plt.ylabel("Thickness value")
+        plt.title(self.subject_name+" Elastic vs Linear Thickness")
+        plt.xlabel("Point Number")
+        plt.ylabel("Thickness Value")
         ax.plot(self.attributes_linear_matching, label="Linear Thickness", color='r')
         ax.plot(self.attributes_elastic_matching, label="Elastic Thickness", color='g')
         handles, labels = ax.get_legend_handles_labels()
@@ -176,12 +138,48 @@ class CorpusCallosum:
         plt.savefig(os.path.join(self.outdir, self.subject_name + "_thickness_comparison" + ".pdf"))
         plt.close()
 
-    def save_run_data(self):
+    def save_matching_data(self):
+        if self.linear:
+            return
         np.savetxt(os.path.join(self.outdir, self.subject_name + "_thickness_gamma.csv"),
                    self.gamma, fmt="%f", delimiter=',')
         if self.template_curve:
             np.savetxt(os.path.join(self.outdir, self.subject_name + "_registration_gamma.csv"),
-                   self.joined_curve_elastic.geodesic.gamma, fmt="%f", delimiter=',')
+                   self.template_geodesic_elastic.gamma, fmt="%f", delimiter=',')
+        fig = plt.figure(1)
+        plt.title(self.subject_name + '\n' + 'Template ' * bool(self.template_curve) +
+                          "Gamma")
+        plt.xlabel("Point Number")
+        plt.ylabel("Gamma Value")
+        if not self.template_curve:
+            plt.plot(self.gamma, label="Gamma", color='r')
+            plt.savefig(os.path.join(self.outdir, self.subject_name + '_template' * bool(self.template_curve) +
+                    "_gamma" + ".pdf"))
+        plt.close()
+
+
+    def _compute(self):
+        self._match_top_and_bottom_curves()
+
+        # If a template curve was specified, match the joined output curves to it.
+        if self.template_curve:
+            self._join_top_and_bottom()
+            if type(self.template_curve) == str:
+                self.template_curve = Curve(self.template_curve)
+            self.joined_curve_linear = \
+                match.elastic_curve_matching(self.template_curve, self.joined_curve_linear,
+                                             self.settings, linear=self.linear_template_matching)
+
+            self.joined_curve_elastic = \
+                match.elastic_curve_matching(self.template_curve, self.joined_curve_elastic,
+                                             self.settings, linear=self.linear_template_matching)
+            self.template_geodesic_linear = self.joined_curve_linear.geodesic
+            self.template_geodesic_elastic = self.joined_curve_elastic.geodesic
+        self._compute_attributes()
+        self._compute_medial_curve()
+
+    def _compute_attributes(self):
+        pass
 
     def _match_top_and_bottom_curves(self):
         """ Preform elastic shape matching between top and bottom portion of callosal curves."""
@@ -210,19 +208,9 @@ class CorpusCallosum:
                                                               self.settings, linear=self.linear)
         self.gamma = self.curve_bot_elastic.geodesic.gamma
 
-    def _compute_medial_curve(self):
-        """ Compute a curve medial to the top and bottom curves. """
-        medial_curve_coords = self.curve_top.coords - (0.5)*(self.curve_top.coords - self.curve_bot_elastic.coords)
-        self.medial_curve = Curve(medial_curve_coords)
-
-
-
-
 
 
     def _join_top_and_bottom(self):
-        if self.joined_curve_linear != [] or self.joined_curve_elastic != []:
-            return
         output_plane_data = np.array(list(self._plane_dim_data[1]) + list(self._plane_dim_data[2]))
         output_plane_dim = self._plane_dim_data[0]
         joined_nonelastic_coords = []
@@ -243,18 +231,64 @@ class CorpusCallosum:
         self.joined_curve_elastic = Curve(joined_elastic_coords)
         self.joined_attributes_elastic = np.array(list(self.attributes_elastic_matching) + list(self.attributes_elastic_matching)[::-1])
 
+    def _compute_medial_curve(self):
+        """ Compute a curve medial to the top and bottom curves. """
+        medial_curve_coords = self.curve_top.coords - (0.5)*(self.curve_top.coords - self.curve_bot_elastic.coords)
+        self.medial_curve = Curve(medial_curve_coords)
+
+    def _attribute_plot(self):
+            pass
+
+
+class CorpusCallosumThickness(CorpusCallosum):
+    def __init__(self, subject_name, curvefile_path_top, curvefile_path_bottom, resample_siz=100,
+                 geodesic_steps=5, linear=False, template_curve=False, linear_template_matching=False,
+                 outdir='', alt_registration=False):
+        super(CorpusCallosumThickness, self).__init__(subject_name, curvefile_path_top, curvefile_path_bottom, resample_siz,
+                 geodesic_steps, linear, template_curve, linear_template_matching,
+                 outdir, alt_registration)
+
+    def _compute_attributes(self):
+        # Compute nonelastic thickness by finding the euclidean distance between points
+        self.attributes_linear_matching = np.sqrt(np.sum((self.curve_top.coords - self.curve_bot.coords)**2, axis=0))
+        self.attributes_elastic_matching = np.sqrt(np.sum((self.curve_top.coords - self.curve_bot_elastic.coords)**2, axis=0))
+        self._join_top_and_bottom()
+
+        # Compute thickness for registered curve.
+        if self.alt_registration and self.template_curve:
+                # Change to compute the Euclidean distance on template match curve to get registered thickness
+                nonelastic_reg_curve_top = self.joined_curve_linear.coords[:, :self.joined_curve_elastic.siz()//2]
+                nonelastic_reg_curve_bot = self.joined_curve_linear.coords[:, self.joined_curve_elastic.siz()//2:][:, ::-1]
+                elastic_reg_curve_top = self.joined_curve_linear.coords[:, :self.joined_curve_elastic.siz()//2]
+                elastic_reg_curve_bot = self.joined_curve_linear.coords[:, self.joined_curve_elastic.siz()//2:][:, ::-1]
+
+                nonelastic_thickness = np.sqrt(np.sum((nonelastic_reg_curve_top - nonelastic_reg_curve_bot)**2, axis=0))
+                elastic_thickness = np.sqrt(np.sum((elastic_reg_curve_top - elastic_reg_curve_bot)**2, axis=0))
+                self.joined_attributes_linear = np.array(list(nonelastic_thickness)+list(nonelastic_thickness)[::-1])
+                self.joined_attributes_elastic = np.array(list(elastic_thickness)+list(elastic_thickness)[::-1])
+        elif self.template_curve:
+                # Obtain new thickness values by reparameterizing values for thickness computed using linear matching
+                # with elastic matching output values.
+                self.joined_attributes_linear = \
+                    (Curve(np.array(self.joined_attributes_linear)).
+                     return_reparameterized_by_gamma(self.template_geodesic_linear.gamma)).coords
+                self.joined_attributes_elastic = \
+                    (Curve(np.array(self.joined_attributes_elastic)).
+                     return_reparameterized_by_gamma(self.template_geodesic_elastic.gamma)).coords
+
+
+    def _attribute_plot(self):
+        curve1 = self.curve_top
+        if self.linear:
+            curve2 = self.curve_bot
+        else:
+            curve2 = self.curve_bot_elastic
+        plt.plot(curve1.coords[0], curve1.coords[1])
+        plt.plot(curve2.coords[0], curve2.coords[1])
+        for i in xrange(0, len(curve1.coords[0])):
+            plt.plot([curve1.coords[0][i], curve2.coords[0][i]],
+                     [curve1.coords[1][i], curve2.coords[1][i]])
 
 
 
 
-
-    def _add_thickness_plot_given_curves(self, curve1, curve2):
-            plt.plot(curve1.coords[0], curve1.coords[1])
-            plt.plot(curve2.coords[0], curve2.coords[1])
-            for i in xrange(0, len(curve1.coords[0])):
-                plt.plot([curve1.coords[0][i], curve2.coords[0][i]],
-                         [curve1.coords[1][i], curve2.coords[1][i]])
-
-
-class corpus_callosum_thickness(CorpusCallosum):
-    pass

@@ -17,8 +17,8 @@ def main():
         import rpy2.robjects
         print "Success! R and rpy2 are installed.\n"
     except:
-        print "rpy2 test failure! R or rpy2 are not installed correctly!'\n"
-        print "Stats portion will not function until this is fixed.'\n"
+        print "rpy2 test failure! R or rpy2 are not installed correctly!\n"
+        print "Stats portion will not function until this is fixed.\n"
 
     print "Testing corpus callosum thickness package...\n"
     test_dir_location = os.path.dirname(os.path.realpath(__file__))
@@ -39,21 +39,25 @@ def main():
     top_curves.close()
     bot_curves.close()
     bindir = os.path.dirname(sys.executable)
-
+    print "Test data will output to a specified directory"
+    print "Blank input will output to the user's desktop"
     outdir = raw_input("Specify test output directory: ")
-    outdir = os.path.abspath(outdir)
+    if outdir == '':
+        outdir = "~/Desktop"
+    outdir = os.path.expanduser(outdir) + "/testOutput"
+    print "Writing files to ", outdir
 
     # Test unregistered Matching
     c1 = subprocess.call([sys.executable, bindir + "/corpus_callosum_analyze.py", os.getcwd() + "/names.txt",
                     os.getcwd() + "/topCurvePaths.txt",
                     os.getcwd() + "/botCurvePaths.txt",
-                    "-odir", outdir+"/testOutput"])
+                    "-odir", outdir])
 
     # Test matching registered to Template
     subprocess.call([sys.executable, bindir + "/corpus_callosum_analyze.py", os.getcwd() + "/names.txt",
                     os.getcwd() + "/topCurvePaths.txt",
                     os.getcwd() + "/botCurvePaths.txt",
-                    "-odir", outdir+"/testOutput", "-templateID", "curve1"])
+                    "-odir", outdir, "-templateID", "curve1"])
 
 if __name__ == "__main__":
     main()

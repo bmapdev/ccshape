@@ -33,15 +33,17 @@ def corpus_callosum_analyze(subject_ids, top_curves, bot_curves, odir, template_
                             open_curves=False, linear=False, no_rotate=False, no_plot=False, resize=300, linear_template_matching=False, altReg=False):
     """ Takes as input
     """
-    from ccthickness.corpus_callosum import CorpusCallosum
+    from ccshape.corpus_callosum import CorpusCallosumThickness
     if not list_input:
         subject_ids = open(os.path.abspath(subject_ids))
         subject_ids = subject_ids.read().split()
+        subject_ids.sort()
         top_curves = open(os.path.abspath(top_curves))
         top_curves = top_curves.read().split()
+        top_curves.sort()
         bot_curves = open(os.path.abspath(bot_curves))
         bot_curves = bot_curves.read().split()
-    print 'template_id = ', template_id, '\n\n'
+        bot_curves.sort()
 
     if template_id:
         if template_id not in subject_ids:
@@ -49,22 +51,21 @@ def corpus_callosum_analyze(subject_ids, top_curves, bot_curves, odir, template_
         if not os.path.exists(os.path.join(odir, 'template')):
             os.makedirs(os.path.join(odir, 'template'))
         template_index = subject_ids.index(template_id)
-        template_cc = CorpusCallosum(template_id, top_curves[template_index], bot_curves[template_index],
+        template_cc = CorpusCallosumThickness(template_id, top_curves[template_index], bot_curves[template_index],
                                      linear=linear, outdir=os.path.join(odir, 'template'),
                                      linear_template_matching=linear_template_matching, alt_registration=altReg)
 
-        template_cc.compute_thickness()
-        template_cc.output_thickness_ucf()
+        template_cc.output_ucf()
         if not no_plot:
-            template_cc.plot_thickness()
+            template_cc.plot()
             if not linear and not linear_template_matching:
-                template_cc.plot_thickness_comparison()
-        template_cc.save_run_data()
+                template_cc.plot_comparison()
+        template_cc.save_matching_data()
 
         if linear:
-            template_curve = template_cc.joined_nonelastic_curve
+            template_curve = template_cc.joined_curve_linear
         else:
-            template_curve = template_cc.joined_elastic_curve
+            template_curve = template_cc.joined_curve_elastic
     else:
         template_curve = False
 
@@ -76,16 +77,15 @@ def corpus_callosum_analyze(subject_ids, top_curves, bot_curves, odir, template_
             raise ValueError(subject_ids[i]+" is missing a curve file!")
         if not os.path.exists(os.path.join(odir, subject_ids[i])):
             os.makedirs(os.path.join(odir, subject_ids[i]))
-        current_cc = CorpusCallosum(subject_ids[i], top_curves[i], bot_curves[i], linear=linear,
+        current_cc = CorpusCallosumThickness(subject_ids[i], top_curves[i], bot_curves[i], linear=linear,
                                     template_curve=template_curve, outdir=os.path.join(odir, subject_ids[i]),
                                     linear_template_matching=linear_template_matching, alt_registration=altReg)
-        current_cc.compute_thickness()
-        current_cc.output_thickness_ucf()
+        current_cc.output_ucf()
         if not no_plot:
-            current_cc.plot_thickness(plot_linear=linear)
+            current_cc.plot(plot_linear=linear)
             if not linear and not linear_template_matching:
-                current_cc.plot_thickness_comparison()
-        current_cc.save_run_data()
+                current_cc.plot_comparison()
+        current_cc.save_matching_data()
 
 if __name__ == '__main__':
     main()

@@ -7,6 +7,8 @@ __email__ = "ayersb@ucla.edu"
 
 import os
 import sys
+import subprocess
+
 
 def main():
     print "\nStarting setup...\n"
@@ -36,10 +38,22 @@ def main():
     names.close()
     top_curves.close()
     bot_curves.close()
-    print "Setup Completed! To run the test, run the following command,\n"
     bindir = os.path.dirname(sys.executable)
-    print sys.executable, " ", bindir+ "/corpus_callosum_analyze.py", " ", os.getcwd() + \
-          "/names.txt", os.getcwd() + "/topCurvePaths.txt", os.getcwd() + "/botCurvePaths.txt" +" "+ "-odir " + os.getcwd()+"/testOutput"
+
+    outdir = raw_input("Specify test output directory: ")
+    outdir = os.path.abspath(outdir)
+
+    # Test unregistered Matching
+    c1 = subprocess.call([sys.executable, bindir + "/corpus_callosum_analyze.py", os.getcwd() + "/names.txt",
+                    os.getcwd() + "/topCurvePaths.txt",
+                    os.getcwd() + "/botCurvePaths.txt",
+                    "-odir", outdir+"/testOutput"])
+
+    # Test matching registered to Template
+    subprocess.call([sys.executable, bindir + "/corpus_callosum_analyze.py", os.getcwd() + "/names.txt",
+                    os.getcwd() + "/topCurvePaths.txt",
+                    os.getcwd() + "/botCurvePaths.txt",
+                    "-odir", outdir+"/testOutput", "-templateID", "curve1"])
 
 if __name__ == "__main__":
     main()

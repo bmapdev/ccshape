@@ -7,12 +7,12 @@ __email__ = "ayersb@ucla.edu"
 
 from distutils.core import setup
 # from setuptools import setup
-base_dir = 'ccthickness'
+base_dir = 'ccshape'
 setup(
-    name='ccthickness',
+    name='ccshape',
     version='0.1dev',
-    packages=['ccthickness'],
-    package_dir={'ccthickness': base_dir, },
+    packages=['ccshape'],
+    package_dir={'ccshape': base_dir, },
     test_suite='nose.collector',
     scripts=['bin/corpus_callosum_thickness.py', 'bin/corpus_callosum_analyze.py','bin/corpus_callosum_setup_files.py',
              'bin/corpus_callosum_quick.py'],

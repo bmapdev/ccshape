@@ -95,13 +95,13 @@ echo "setenv R_LIBS ${R_lib_path}:$R_LIBS" >> ~/.tcshrc
 source ~/.bashrc
 
 echo -n "Installing shapestats package...This may take a few minutes..."
-$install_dir/bin/conda install --yes -c https://conda.binstar.org/bayers shapestats
+$install_dir/bin/pip install git+https://github.com/bmapdev/shapestats
 echo -n "Installing shapeio package...This may take a few minutes..."
-$install_dir/bin/conda install --yes -c https://conda.binstar.org/bayers shapeio
+$install_dir/bin/pip install git+https://github.com/bmapdev/shapeio
 echo -n "Installing curvematch package...This may take a few minutes..."
-$install_dir/bin/conda install --yes -c https://conda.binstar.org/bayers curvematch
-echo -n "Installing corpus callosum thickness package...This may take a few minutes..."
-$install_dir/bin/conda install --yes -c https://conda.binstar.org/bayers corpus-callosum-thickness
+$install_dir/bin/pip install git+https://github.com/bmapdev/curvematch
+echo -n "Installing corpus callosum shape package...This may take a few minutes..."
+$install_dir/bin/pip install git+https://github.com/bmapdev/ccshape
 echo "Done."
 
 echo "Install complete. Clearing package storage..."

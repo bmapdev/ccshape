@@ -79,14 +79,27 @@ $install_dir/tmp/Miniconda-3.4.2-${platform}-x86_64.sh -b -f -p $install_dir 1> 
 echo "Done."
 echo -n "Installing statsmodels...This may take a few minutes..."
 $install_dir/bin/conda install statsmodels -q --yes 1>> ${install_dir}/tmp/install.log
+echo -n "Installing pip..."
 $install_dir/bin/conda install pip -q --yes 1>> ${install_dir}/tmp/install.log
+echo -n "Installing matplotlib..."
+$install_dir/bin/conda install matplotlib -q --yes 1>> ${install_dir}/tmp/install.log
 echo "Done."
 
 echo -n "Installing vtk..."
 $install_dir/bin/conda install vtk -q --yes 1>> ${install_dir}/tmp/install.log
+echo "Done."
 echo -n "Installing rpy2..."
 #$install_dir/bin/pip install -q rpy2 1>> ${install_dir}/tmp/install.log
 $install_dir/bin/pip install rpy2==2.3.9 1>> ${install_dir}/tmp/install.log
+echo "Done."
+echo -n "Installing beautifulsoup4..."
+$install_dir/bin/pip install beautifulsoup4 1>> ${install_dir}/tmp/install.log
+echo "Done."
+echo -n "Installing svg.path..."
+$install_dir/bin/pip install svg.path 1>> ${install_dir}/tmp/install.log
+echo "Done."
+echo -n "Installing nibabel..."
+$install_dir/bin/pip install nibabel 1>> ${install_dir}/tmp/install.log
 echo "Done."
 
 echo "R_LIBS=${R_lib_path}:$R_LIBS; export R_LIBS" >> ~/.bashrc
@@ -96,10 +109,13 @@ source ~/.bashrc
 
 echo -n "Installing shapestats package...This may take a few minutes..."
 $install_dir/bin/pip install git+https://github.com/bmapdev/shapestats
+echo "Done."
 echo -n "Installing shapeio package...This may take a few minutes..."
 $install_dir/bin/pip install git+https://github.com/bmapdev/shapeio
+echo "Done."
 echo -n "Installing curvematch package...This may take a few minutes..."
 $install_dir/bin/pip install git+https://github.com/bmapdev/curvematch
+echo "Done."
 echo -n "Installing corpus callosum shape package...This may take a few minutes..."
 $install_dir/bin/pip install git+https://github.com/bmapdev/ccshape
 echo "Done."

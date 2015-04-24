@@ -55,6 +55,7 @@ class CorpusCallosum(object):
         self.curve_top = Curve(file=self.curvefile_path_top)
         self.curve_bot = Curve(file=self.curvefile_path_bottom)
         self.medial_curve = []
+        self.least_var_dim = -1
         self._plane_dim_data = []
 
         self.curve_bot_elastic = []
@@ -69,7 +70,7 @@ class CorpusCallosum(object):
         self.template_gamma_linear = []
         self._compute()
 
-    def plot(self, plot_title=False, plot_linear=False, plot_both=False):
+    def plot(self, plot_title=False, plot_both=False):
         if bool(self.template_curve):
             if self.linear:
                 plotting.plot_matching(self.subject_name + '_uniform' * self.linear_template_matching *
@@ -88,13 +89,13 @@ class CorpusCallosum(object):
             if plot_title:
                 plt.title(plot_title)
             else:
-                plt.title(self.subject_name + '\nLinear Matching' * plot_linear +
-                          '\nElastic Matching' * (not plot_linear))
+                plt.title(self.subject_name + '\nLinear Matching' * self.linear +
+                          '\nElastic Matching' * (not self.linear))
             self._attribute_plot()
-            plt.plot(self.medial_curve.coords[0], self.medial_curve.coords[1])
+            #plt.plot(self.medial_curve.coords[0], self.medial_curve.coords[1])
             plt.axis('equal')
-            plt.savefig(os.path.join(self.outdir, self.subject_name + "_linear"*plot_linear +
-                                     "_elastic"*(not plot_linear) + ".pdf"))
+            plt.savefig(os.path.join(self.outdir, self.subject_name + "_linear"*self.linear +
+                                     "_elastic"*(not self.linear) + ".pdf"))
             plt.close()
 
     def plot_comparison(self):
@@ -177,13 +178,13 @@ class CorpusCallosum(object):
         self.curve_bot.resample_curve_uniform(self.resample_siz)
 
         # Input Callosal curve segmentations are three dimensional arrays but callosal thickness is only related to two
-        # of these dimensions. Determine which dimension is least varient and store that information for latter, while
+        # of these dimensions. Determine which dimension is least variant and store that information for latter, while
         # keeping the relevant dimensions as part of the curves.
         diff_between_dims = np.abs(np.sum(self.curve_top.coords - self.curve_bot.coords, 1))
-        least_var_dim = np.argmin(diff_between_dims)
+        self.least_var_dim = np.argmin(diff_between_dims)
         coords_top, coords_bot = [], []
         for i in xrange(self.curve_top.dim()):
-            if i == least_var_dim:
+            if i == self.least_var_dim:
                 # [Position data should be inserted in array, stored top curve data, bot curve data]
                 self._plane_dim_data = [i, self.curve_top.coords[i], self.curve_bot.coords[i]]
             else:
@@ -203,9 +204,9 @@ class CorpusCallosum(object):
         joined_elastic_coords = []
         for coord_index in xrange(len(self.curve_top.coords)):
             joined_nonelastic_coords.append(np.array(list(self.curve_top.coords[coord_index]) +
-                                              list(self.curve_bot.coords[coord_index][::-1])))
+                                            list(self.curve_bot.coords[coord_index][::-1])))
             joined_elastic_coords.append(np.array(list(self.curve_top.coords[coord_index]) +
-                                              list(self.curve_bot_elastic.coords[coord_index][::-1])))
+                                         list(self.curve_bot_elastic.coords[coord_index][::-1])))
 
         joined_nonelastic_coords.insert(output_plane_dim, output_plane_data)
         joined_nonelastic_coords = np.array(joined_nonelastic_coords).transpose()
@@ -238,6 +239,7 @@ class CorpusCallosumThickness(CorpusCallosum):
                  outdir, alt_registration)
 
     def _compute_attributes(self):
+
         # Compute nonelastic thickness by finding the euclidean distance between points
         self.attributes_linear_matching = \
             np.sqrt(np.sum((self.curve_top.coords - self.curve_bot.coords)**2, axis=0))
@@ -268,19 +270,18 @@ class CorpusCallosumThickness(CorpusCallosum):
                 self.joined_attributes_elastic = \
                     reparameterize_by_gamma(self.joined_attributes_linear, self.template_gamma_elastic)
 
-
     def _attribute_plot(self):
         curve1 = self.curve_top
         if self.linear:
             curve2 = self.curve_bot
         else:
             curve2 = self.curve_bot_elastic
+
+        # Plot the top and bottom callosal curves.
         plt.plot(curve1.coords[0], curve1.coords[1])
         plt.plot(curve2.coords[0], curve2.coords[1])
+
+        # Plot the distance between matched points on the curves
         for i in xrange(0, len(curve1.coords[0])):
             plt.plot([curve1.coords[0][i], curve2.coords[0][i]],
                      [curve1.coords[1][i], curve2.coords[1][i]])
-
-
-
-

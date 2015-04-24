@@ -21,7 +21,7 @@ def main():
     parser.add_argument('-linear', dest='linear', help='use linear matching', action='store_true', default=False, required=False)
     parser.add_argument('-norotate', dest='norotate', help='do not align rotations', action='store_true', default=False,required=False)
     parser.add_argument('-noplot', dest='noplot', help='do not save graphical plots', action='store_true', default=False,required=False)
-    parser.add_argument('-resize', dest='resize', help='resize to the specified number of vertices', required=False, default=100)
+    parser.add_argument('-resize', dest='resize', help='resize to the specified number of vertices', required=False, default=300)
     parser.add_argument('-altThicknessReg', dest='altReg', action='store_true', help='Use alternative method to register thickness values', required=False, default=False)
     args = parser.parse_args()
     corpus_callosum_analyze(args.subjectIDs, args.topCurves, args.botCurves, args.odir, args.templateID, args.listInput,
@@ -53,7 +53,8 @@ def corpus_callosum_analyze(subject_ids, top_curves, bot_curves, odir, template_
         template_index = subject_ids.index(template_id)
         template_cc = CorpusCallosumThickness(template_id, top_curves[template_index], bot_curves[template_index],
                                      linear=linear, outdir=os.path.join(odir, 'template'),
-                                     linear_template_matching=linear_template_matching, alt_registration=altReg)
+                                     linear_template_matching=linear_template_matching, alt_registration=altReg,
+                                     resample_siz=resize)
 
         template_cc.output_ucf()
         if not no_plot:
@@ -79,21 +80,14 @@ def corpus_callosum_analyze(subject_ids, top_curves, bot_curves, odir, template_
             os.makedirs(os.path.join(odir, subject_ids[i]))
         current_cc = CorpusCallosumThickness(subject_ids[i], top_curves[i], bot_curves[i], linear=linear,
                                     template_curve=template_curve, outdir=os.path.join(odir, subject_ids[i]),
-                                    linear_template_matching=linear_template_matching, alt_registration=altReg)
+                                    linear_template_matching=linear_template_matching, alt_registration=altReg,
+                                    resample_siz=resize)
         current_cc.output_ucf()
         if not no_plot:
-            current_cc.plot(plot_linear=linear)
+            current_cc.plot()
             if not linear and not linear_template_matching:
                 current_cc.plot_comparison()
         current_cc.save_matching_data()
 
 if __name__ == '__main__':
     main()
-
-
-
-
-
-
-
-

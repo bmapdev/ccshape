@@ -1,0 +1,20 @@
+# Python compiled modules
+*.py[cod]
+
+# Data surface format
+*.dfs
+
+# C extensions
+*.so
+
+# Packages
+dist
+build
+
+# Pycharm Project
+.idea
+
+# Extra directories
+.DS_Store
+*.egg-info
+eggs

@@ -46,7 +46,7 @@ def create_setup_files(source_directory, output_directory):
         raise ValueError("Error! There are more bottom curves than top curves!")
     top_curve_paths_file = open(os.path.join(output_directory, "top_curve_paths.txt"), 'w')
     bottom_curve_paths_file = open(os.path.join(output_directory, "bottom_curve_paths.txt"), "w")
-    subject_ids_file = open(os.path.join(output_directory, "subjectIDs.txt"), 'w')
+    subject_ids_file = open(os.path.join(output_directory, "subject_ids.txt"), 'w')
 
     for i in xrange(len(top_curves)):
         top_curve_paths_file.write(os.path.join(source_directory, top_curves[i])+'\n')

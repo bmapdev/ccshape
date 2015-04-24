@@ -18,11 +18,13 @@ def main():
     parser.add_argument("-test_level", dest="test_level", help="min/mid/max", default="mid", required=False)
     parser.add_argument("-template_id", dest="template_id", help="subjectID to use as template.",
                         default=False, required=False)
+    parser.add_argument("-resize", dest="resize", help="Resize to the specified number of vertices",
+                        default=100, required=False)
     args = parser.parse_args()
-    corpus_callosum_quick(args.source_directory, args.output_directory, args.test_level, args.template_id)
+    corpus_callosum_quick(args.source_directory, args.output_directory, args.test_level, args.template_id, args.resize)
 
 
-def corpus_callosum_quick(source_directory, output_directory, test_level, template_id):
+def corpus_callosum_quick(source_directory, output_directory, test_level, template_id, resize):
     """ Analyze properly named corpus callosum UCF segmentations by searching source directory for appropriate files, and
         automatically outputting setup information and analysis output to the output directory.
 
@@ -65,30 +67,38 @@ def corpus_callosum_quick(source_directory, output_directory, test_level, templa
         else:
             corpus_callosum_analyze.corpus_callosum_analyze(subject_ids, top_curves, bot_curves,
                                                             os.path.join(output_directory, "output_files", "elastic"),
-                                                            template_id=False, linear=False, linear_template_matching=False)
+                                                            template_id=False, linear=False, linear_template_matching=False,
+                                                            resize=resize)
             corpus_callosum_analyze.corpus_callosum_analyze(subject_ids, top_curves, bot_curves,
                                                             os.path.join(output_directory, "output_files", "linear"),
-                                                            template_id=False, linear=True, linear_template_matching=False)
+                                                            template_id=False, linear=True, linear_template_matching=False,
+                                                            resize=resize)
             corpus_callosum_analyze.corpus_callosum_analyze(subject_ids, top_curves, bot_curves,
                                                             os.path.join(output_directory, "output_files", "reg_elastic"),
-                                                            template_id, linear=False, linear_template_matching=False)
+                                                            template_id, linear=False, linear_template_matching=False,
+                                                            resize=resize)
 
             corpus_callosum_analyze.corpus_callosum_analyze(subject_ids, top_curves, bot_curves,
                                                             os.path.join(output_directory, "output_files", "reg_linear"),
-                                                            template_id, linear=True, linear_template_matching=False)
+                                                            template_id, linear=True, linear_template_matching=False,
+                                                            resize=resize)
             corpus_callosum_analyze.corpus_callosum_analyze(subject_ids, top_curves, bot_curves,
                                                             os.path.join(output_directory, "output_files", "uniform_reg_elastic"),
-                                                            template_id, linear=False, linear_template_matching=True)
+                                                            template_id, linear=False, linear_template_matching=True,
+                                                            resize=resize)
             corpus_callosum_analyze.corpus_callosum_analyze(subject_ids, top_curves, bot_curves,
                                                             os.path.join(output_directory, "output_files", "uniform_reg_linear"),
-                                                            template_id, linear=True, linear_template_matching=True)
+                                                            template_id, linear=True, linear_template_matching=True,
+                                                            resize=resize)
     if test_level == "min":
             corpus_callosum_analyze.corpus_callosum_analyze(subject_ids, top_curves, bot_curves,
                                                             os.path.join(output_directory, "output_files", "elastic"),
-                                                            template_id=False, linear=False, linear_template_matching=False)
+                                                            template_id=False, linear=False, linear_template_matching=False,
+                                                            resize=resize)
             corpus_callosum_analyze.corpus_callosum_analyze(subject_ids, top_curves, bot_curves,
                                                             os.path.join(output_directory, "output_files", "linear"),
-                                                            template_id=False, linear_template_matching=False)
+                                                            template_id=False, linear=True, linear_template_matching=False,
+                                                            resize=resize)
 
 if __name__ == "__main__":
     main()

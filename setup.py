@@ -14,7 +14,7 @@ setup(
     packages=['ccshape'],
     package_dir={'ccshape': base_dir, },
     test_suite='nose.collector',
-    scripts=['bin/corpus_callosum_thickness.py', 'bin/corpus_callosum_analyze.py','bin/corpus_callosum_setup_files.py',
+    scripts=['bin/corpus_callosum_analyze.py','bin/corpus_callosum_setup_files.py',
              'bin/corpus_callosum_quick.py'],
     license='MIT/TBD',
     exclude_package_data={'': ['.gitignore', '.idea']},
